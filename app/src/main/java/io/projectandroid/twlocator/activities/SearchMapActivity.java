@@ -2,21 +2,16 @@ package io.projectandroid.twlocator.activities;
 
 import android.app.SearchManager;
 import android.content.Context;
-import android.content.Intent;
-import android.content.SearchRecentSuggestionsProvider;
-import android.graphics.drawable.Drawable;
 import android.provider.SearchRecentSuggestions;
-import android.support.v4.content.res.ResourcesCompat;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.SearchView;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.EditText;
 import android.util.Log;
+
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
 
 import io.projectandroid.twlocator.R;
 import io.projectandroid.twlocator.providers.SearchRecentValuesProvider;
@@ -24,12 +19,9 @@ import io.projectandroid.twlocator.providers.SearchRecentValuesProvider;
 public class SearchMapActivity extends AppCompatActivity {
 
     public static final String TAG = "SearchMapActivity";
-    private boolean mSearchOpened = false;
-    private EditText mSearchEditText;
-    private Drawable mIconOpenSearch;
-    private Drawable mIconCloseSearch;
-    private String mSearchText;
-    private MenuItem mSearchAction;
+
+    private GoogleMap mGoogleMap;
+    private Menu mSearchAction;
 
     private SearchView mSearchView;
 
@@ -37,6 +29,10 @@ public class SearchMapActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search_map);
+
+        setupMap();
+
+
 
 
         /*final Intent queryIntent = getIntent();
@@ -71,12 +67,24 @@ public class SearchMapActivity extends AppCompatActivity {
             @Override
             public boolean onQueryTextSubmit(String query) {
                 processSearchQuery(query);
-                mSearchView.clearFocus();
+                mSearchView.setIconifiedByDefault(true);
                 return false;
             }
 
             @Override
             public boolean onQueryTextChange(String newText) {
+                return false;
+            }
+        });
+
+        mSearchView.setOnSuggestionListener(new SearchView.OnSuggestionListener() {
+            @Override
+            public boolean onSuggestionSelect(int position) {
+                return false;
+            }
+
+            @Override
+            public boolean onSuggestionClick(int position) {
                 return false;
             }
         });
@@ -97,7 +105,6 @@ public class SearchMapActivity extends AppCompatActivity {
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        mSearchAction = menu.findItem(R.id.menu_search);
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -157,5 +164,12 @@ public class SearchMapActivity extends AppCompatActivity {
                         SearchRecentValuesProvider.MODE);
         suggestions.clearHistory();
 
+    }
+
+    private void setupMap(){
+        if (mGoogleMap == null) {
+            mGoogleMap = ((MapFragment) getFragmentManager().findFragmentById(R.id.map)).getMap();
+        }
+        mGoogleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
     }
 }
