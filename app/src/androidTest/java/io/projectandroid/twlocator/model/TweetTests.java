@@ -1,4 +1,4 @@
-package io.projectandroid.twlocator;
+package io.projectandroid.twlocator.model;
 
 import android.test.AndroidTestCase;
 
