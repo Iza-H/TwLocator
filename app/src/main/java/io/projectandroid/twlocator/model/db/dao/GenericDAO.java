@@ -24,11 +24,12 @@ public abstract class GenericDAO<T extends ModelPersistable, E> {
     public static final long INVALID_ID_DELETE_ALL_RECORDS = 0;
     protected DBHelper db;
 
-    private WeakReference<Context> context;
+    //private WeakReference<Context> context;
 
 
     public GenericDAO() {
         db = DBHelper.getInstance();
+        //context = DBHelper.getInstance().get
     }
 
     //abstract methods:
@@ -43,11 +44,6 @@ public abstract class GenericDAO<T extends ModelPersistable, E> {
             throw new IllegalArgumentException("Passing NULL notebook, imbecile");
         }
 
-        if (context.get() == null) {
-            throw new IllegalStateException("Context NULL");
-        }
-
-        // insert
         DBHelper db = DBHelper.getInstance();
 
         long id = db.getWritableDatabase().insert(getTableName(), null, this.getContentValues(element));
@@ -65,9 +61,6 @@ public abstract class GenericDAO<T extends ModelPersistable, E> {
         }
         if (id<1){
             throw new IllegalArgumentException("Passing id invalid, imbecile");
-        }
-        if (context.get() == null) {
-            throw new IllegalStateException("Context NULL");
         }
 
         DBHelper db = DBHelper.getInstance();
@@ -101,6 +94,20 @@ public abstract class GenericDAO<T extends ModelPersistable, E> {
 
     public abstract String[] getAllColumns();
     public abstract String getId();
+
+    public E queryBySelection(String selection,String[] selectionArgs ){
+        List<T> list= new LinkedList<>();
+        Cursor cursor = db.getReadableDatabase().query(getTableName(), getAllColumns(), selection +"=?", selectionArgs, null, null, getId());
+        if (cursor != null && cursor.getCount() > 0) {
+            cursor.moveToFirst();
+            do {
+                T element = elementFromCursor(cursor);
+                list.add(element);
+            } while (cursor.moveToNext());
+        }
+        E agregate = mapElementsInAgregate(list);
+        return agregate;
+    }
 
     public E query() {
         List<T> list= new LinkedList<>();

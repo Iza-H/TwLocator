@@ -68,7 +68,8 @@ public class TweetDAO extends GenericDAO<Tweet, Tweets>{
             final byte[] picture = c.getBlob(c.getColumnIndex(DBConstants.KEY_PICTURE));
 
 
-            final Tweet tweet = new Tweet(id, userName, userProfileImage, text, searchedAddrress, latitude, longitude, picture);
+            final Tweet tweet = new Tweet(userName, userProfileImage, text, searchedAddrress, latitude, longitude, picture);
+            tweet.setId(id);
 
 
             return tweet;

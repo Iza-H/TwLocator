@@ -34,10 +34,11 @@ public class DBConstants {
 					+ " integer primary key autoincrement, "
 					+ KEY_TWEET_TEXT + " text not null,"
 					+ KEY_TWEET_USER_NAME + " text not null,"
-					+ KEY_PROFILE_IMAGE_URL + " text not null,"
+					+ KEY_PROFILE_IMAGE_URL + " text,"
+					+ KEY_SEARCHED_ADDRESS + " text not null,"
 					+ KEY_LATITUDE + " real not null,"
 					+ KEY_LONGITUDE + " real not null,"
-					+ KEY_PICTURE + "blob"
+					+ KEY_PICTURE + " blob"
 					//+ KEY_PROFILE_IMAGE_URL + " text not null"
 					+ ");";
 	public static final String DBNAME = "twlocation.sql";

@@ -15,7 +15,7 @@ public class Tweet implements ModelPersistable {
     private double mLongitud;
     private byte[] mPicture;
 
-    public Tweet(long twitterId, String userName, String userProfileImage, String text, String searchedAddrress, double latitude, double longitud) {
+    public Tweet(String userName, String userProfileImage, String text, String searchedAddrress, double latitude, double longitud) {
         mUserName = userName;
         mUserProfileImage = userProfileImage;
         mText = text;
@@ -24,8 +24,8 @@ public class Tweet implements ModelPersistable {
         mLongitud = longitud;
     }
 
-    public Tweet(long id, String userName, String userProfileImage, String text, String searchedAddrress, double latitude, double longitud, byte[] picture) {
-        mId = id;
+
+    public Tweet(String userName, String userProfileImage, String text, String searchedAddrress, double latitude, double longitud, byte[] picture) {
         mUserName = userName;
         mUserProfileImage = userProfileImage;
         mText = text;

@@ -4,7 +4,6 @@ import android.app.SearchManager;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.Looper;
 import android.provider.SearchRecentSuggestions;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -29,8 +28,12 @@ import java.util.List;
 
 import io.projectandroid.twlocator.R;
 import io.projectandroid.twlocator.model.Tweet;
+import io.projectandroid.twlocator.model.Tweets;
+import io.projectandroid.twlocator.model.db.DBConstants;
+import io.projectandroid.twlocator.model.db.dao.TweetDAO;
 import io.projectandroid.twlocator.providers.SearchRecentValuesProvider;
 import io.projectandroid.twlocator.utils.Location;
+import io.projectandroid.twlocator.utils.MapHelper;
 import io.projectandroid.twlocator.utils.NetworkHelper;
 import io.projectandroid.twlocator.utils.twitter.ConnectTwitterTask;
 import io.projectandroid.twlocator.utils.twitter.TwitterHelper;
@@ -40,7 +43,6 @@ import twitter4j.Query;
 import twitter4j.QueryResult;
 import twitter4j.Status;
 import twitter4j.TwitterAdapter;
-import twitter4j.TwitterException;
 import twitter4j.TwitterListener;
 
 
@@ -55,25 +57,33 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
     private SearchView mSearchView;
     private String mSearchedAddress;
     private SearchMapActivity mActivity;
+    private boolean isInternetConnection;
+    private SearchRecentSuggestions mSuggestions;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         mActivity = this;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search_map);
+        mSuggestions = new SearchRecentSuggestions(this, SearchRecentValuesProvider.AUTHORITY, SearchRecentValuesProvider.MODE);
+        if (mGoogleMap == null) {
+            mGoogleMap = ((MapFragment) getFragmentManager().findFragmentById(R.id.map)).getMap();
+        }
 
         if (NetworkHelper.isNetworkConnectionOK(new WeakReference<>(getApplication()))) {
             Log.v(TAG, "Twitter connection");
+            isInternetConnection=true;
             mTwitterTask = new ConnectTwitterTask(this);
             mTwitterTask.setListener(this);
-
             mTwitterTask.execute();
+
         } else {
             Toast.makeText(this, getString(R.string.error_network), Toast.LENGTH_LONG).show();
-
+            isInternetConnection=false;
         }
 
-        setupMap();
+
+        MapHelper.setupMap(mGoogleMap);
     }
 
 
@@ -92,9 +102,20 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
                 mGoogleMap.clear();
                 mSearchedAddress=query;
                 saveSuggestionQuery(query);
-                searchLatLngOfQuery(query);
+
+                if (isInternetConnection == false){
+                    searchLatLngOfQuery(query);
+                } else  {
+                    TweetDAO tweetDAO = new TweetDAO();
+                    String[]arg = {query};
+                    Tweets results = tweetDAO.queryBySelection(DBConstants.KEY_SEARCHED_ADDRESS, arg);
+                    for (int i = 0; i<results.size(); i++){
+                        MapHelper.addMarkerToTheMap(mGoogleMap, results.get(i).getLatitude(),results.get(i).getLongitud(), results.get(i).getText() );
+                    }
+                }
+
                 mSearchView.clearFocus();
-                return false;
+                return true;
             }
 
             @Override
@@ -140,31 +161,19 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
 
     private void saveSuggestionQuery(String query){
         Log.v(TAG, query);
-
-        SearchRecentSuggestions suggestions = new SearchRecentSuggestions(this, SearchRecentValuesProvider.AUTHORITY, SearchRecentValuesProvider.MODE);
-        suggestions.saveRecentQuery(query, null);
+        mSuggestions.saveRecentQuery(query, null);
     }
 
 
 
     private void clearHistory(){
-        SearchRecentSuggestions suggestions = new SearchRecentSuggestions(this,
-                        SearchRecentValuesProvider.AUTHORITY,
-                        SearchRecentValuesProvider.MODE);
-        suggestions.clearHistory();
+        mSuggestions.clearHistory();
+        TweetDAO tweetDAO = new TweetDAO();
+        tweetDAO.deleteAll();
 
     }
 
-    private void setupMap(){
-        if (mGoogleMap == null) {
-            mGoogleMap = ((MapFragment) getFragmentManager().findFragmentById(R.id.map)).getMap();
-        }
-        mGoogleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
-        mGoogleMap.getUiSettings().setScrollGesturesEnabled(true);
-        mGoogleMap.getUiSettings().setZoomControlsEnabled(true);
 
-
-    }
 
     private void searchLatLngOfQuery(String query){
         Location location = new Location();
@@ -177,14 +186,12 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                                new LatLng(location.latitude, location.longitude), 12));
+                        MapHelper.moveCamara(mGoogleMap, location.latitude, location.longitude);
                     }
                 });
 
 
                 launchTwitter(location.latitude, location.longitude );
-
             }
         });
 
@@ -208,26 +215,24 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
                 for (final Status tweet : resultsTweets){
                     if (tweet.getGeoLocation() !=null){
                         count++;
-                        Tweet localTweet = new Tweet(tweet.getId(),tweet.getUser().getScreenName(),
+                        Tweet localTweet = new Tweet(tweet.getUser().getScreenName(),
                                 tweet.getUser().getProfileImageURL(), tweet.getText(), mSearchedAddress,
                                 tweet.getGeoLocation().getLatitude(), tweet.getGeoLocation().getLongitude());
                         //localTweet.setImage(takeImage(tweet.getUser().getProfileImageURL()));
-
+                        TweetDAO tweetDAO = new TweetDAO();
+                        tweetDAO.insert(localTweet);
 
 
 
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                Log.v(TAG, "Lat" + tweet.getGeoLocation().getLatitude());
-                                Log.v(TAG, "Long" + tweet.getGeoLocation().getLongitude());
-                                MarkerOptions marker = new MarkerOptions().position
-                                        (new LatLng(tweet.getGeoLocation().getLatitude(), tweet.getGeoLocation().getLongitude())).title(tweet.getText());
+                                MapHelper.addMarkerToTheMap(mGoogleMap, tweet.getGeoLocation().getLatitude(), tweet.getGeoLocation().getLongitude(), tweet.getText());
 
-                                mGoogleMap.addMarker(marker);
 
                             }
                         });
+
 
 
 
