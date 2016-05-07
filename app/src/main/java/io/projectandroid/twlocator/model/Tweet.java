@@ -1,20 +1,21 @@
 package io.projectandroid.twlocator.model;
 
+import java.sql.Blob;
+
 /**
  * Created by izabela on 07/05/16.
  */
-public class Tweet {
+public class Tweet implements ModelPersistable {
     private long mId;
-    private long mTwitterId;
     private String mUserName;
     private String mUserProfileImage;
     private String mText;
     private String mSearchedAddrress;
     private double mLatitude;
     private double mLongitud;
+    private byte[] mPicture;
 
     public Tweet(long twitterId, String userName, String userProfileImage, String text, String searchedAddrress, double latitude, double longitud) {
-        mTwitterId = twitterId;
         mUserName = userName;
         mUserProfileImage = userProfileImage;
         mText = text;
@@ -23,20 +24,23 @@ public class Tweet {
         mLongitud = longitud;
     }
 
+    public Tweet(long id, String userName, String userProfileImage, String text, String searchedAddrress, double latitude, double longitud, byte[] picture) {
+        mId = id;
+        mUserName = userName;
+        mUserProfileImage = userProfileImage;
+        mText = text;
+        mSearchedAddrress = searchedAddrress;
+        mLatitude = latitude;
+        mLongitud = longitud;
+        mPicture = picture;
+    }
+
     public long getId() {
         return mId;
     }
 
     public void setId(long id) {
         mId = id;
-    }
-
-    public long getTwitterId() {
-        return mTwitterId;
-    }
-
-    public void setTwitterId(long twitterId) {
-        mTwitterId = twitterId;
     }
 
     public String getUserName() {
@@ -85,5 +89,13 @@ public class Tweet {
 
     public void setLongitud(double longitud) {
         mLongitud = longitud;
+    }
+
+    public byte[] getPicture() {
+        return mPicture;
+    }
+
+    public void setPicture(byte[] picture) {
+        mPicture = picture;
     }
 }

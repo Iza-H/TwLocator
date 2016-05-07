@@ -9,33 +9,33 @@ import java.lang.ref.WeakReference;
 import java.util.LinkedList;
 import java.util.List;
 
+import io.projectandroid.twlocator.model.ModelPersistable;
 import io.projectandroid.twlocator.model.db.DBHelper;
 
 /**
  * Created by izabela on 07/05/16.
- *
- *
  */
 
-public class GenericDAO{
 
-}
-
-/*
 public abstract class GenericDAO<T extends ModelPersistable, E> {
 
 
 
     public static final long INVALID_ID_DELETE_ALL_RECORDS = 0;
-    //private final String databaseName;
     protected DBHelper db;
 
     private WeakReference<Context> context;
-    // private Context context;
+
 
     public GenericDAO() {
         db = DBHelper.getInstance();
     }
+
+    //abstract methods:
+    public abstract ContentValues getContentValues(T element);
+    public abstract String getTableName();
+    public abstract @NonNull T elementFromCursor(final @NonNull Cursor c);
+    protected abstract E mapElementsInAgregate(List<T> list);
 
 
     public long insert(T element) {
@@ -56,8 +56,8 @@ public abstract class GenericDAO<T extends ModelPersistable, E> {
         return id;
     }
 
-    public abstract void setId(long id);
-    public abstract String getTableName();
+
+
 
     public int update(long id, T element) {
         if (element == null) {
@@ -87,28 +87,15 @@ public abstract class GenericDAO<T extends ModelPersistable, E> {
             db.getWritableDatabase().delete(getTableName(),  "_id = " + id, null);
         }
         db.close();
-}
+    }
 
     public void deleteAll() {
         delete(INVALID_ID_DELETE_ALL_RECORDS);
     }
 
-    public abstract ContentValues getContentValues(T element);
-
-
-    // convenience method
-
-    public abstract @NonNull
-    T elementFromCursor(final @NonNull Cursor c);
-
-
-
     public Cursor queryCursor() {
         // select
-        //DBHelper db = DBHelper.getInstance(this.databaseName, context.get());
-
         Cursor c = db.getReadableDatabase().query(getTableName(), getAllColumns(), null, null, null, null, getId());
-
         return c;
     }
 
@@ -123,15 +110,15 @@ public abstract class GenericDAO<T extends ModelPersistable, E> {
         if (cursor != null && cursor.getCount() > 0) {
             cursor.moveToFirst();
             do {
-                T elelemnt = notebookFromCursor(cursor);
-                list.add(elelemnt);
+                T element = elementFromCursor(cursor);
+                list.add(element);
             } while (cursor.moveToNext());
         }
         E agregate = mapElementsInAgregate(list);
         return agregate;
     }
 
-    protected abstract E mapElementsInAgregate(List<T> list);
+    //protected abstract E mapElementsInAgregate(List<T> list);
 
 
 
@@ -153,4 +140,4 @@ public abstract class GenericDAO<T extends ModelPersistable, E> {
     }
 
 
-}*/
+}

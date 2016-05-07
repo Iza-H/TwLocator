@@ -2,6 +2,9 @@ package io.projectandroid.twlocator.activities;
 
 import android.app.SearchManager;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.Looper;
 import android.provider.SearchRecentSuggestions;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -11,12 +14,17 @@ import android.view.MenuItem;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.ref.WeakReference;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.List;
 
 import io.projectandroid.twlocator.R;
@@ -36,6 +44,7 @@ import twitter4j.TwitterException;
 import twitter4j.TwitterListener;
 
 
+
 public class SearchMapActivity extends AppCompatActivity implements ConnectTwitterTask.OnConnectTwitterListener {
 
     public static final String TAG = "SearchMapActivity";
@@ -45,9 +54,11 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
     //private Menu mSearchAction;
     private SearchView mSearchView;
     private String mSearchedAddress;
+    private SearchMapActivity mActivity;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        mActivity = this;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search_map);
 
@@ -65,16 +76,6 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
         setupMap();
     }
 
-    /*@Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        final Intent queryIntent = getIntent();
-        final String queryAction = queryIntent.getAction();
-        if (Intent.ACTION_SEARCH.equals(queryAction))
-        {
-            processSearchQuery(queryIntent.getStringExtra(SearchManager.QUERY));
-        }
-    }*/
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -88,6 +89,7 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
         mSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
+                mGoogleMap.clear();
                 mSearchedAddress=query;
                 saveSuggestionQuery(query);
                 searchLatLngOfQuery(query);
@@ -104,6 +106,7 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
         mSearchView.setOnSuggestionListener(new SearchView.OnSuggestionListener() {
             @Override
             public boolean onSuggestionSelect(int position) {
+                mGoogleMap.clear();
                 return false;
             }
 
@@ -134,9 +137,6 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
 
 
 
-    private void searchTweets(String searchedText){
-
-    }
 
     private void saveSuggestionQuery(String query){
         Log.v(TAG, query);
@@ -148,8 +148,7 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
 
 
     private void clearHistory(){
-        SearchRecentSuggestions suggestions =
-                new SearchRecentSuggestions(this,
+        SearchRecentSuggestions suggestions = new SearchRecentSuggestions(this,
                         SearchRecentValuesProvider.AUTHORITY,
                         SearchRecentValuesProvider.MODE);
         suggestions.clearHistory();
@@ -161,15 +160,29 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
             mGoogleMap = ((MapFragment) getFragmentManager().findFragmentById(R.id.map)).getMap();
         }
         mGoogleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+        mGoogleMap.getUiSettings().setScrollGesturesEnabled(true);
+        mGoogleMap.getUiSettings().setZoomControlsEnabled(true);
+
+
     }
 
     private void searchLatLngOfQuery(String query){
         Location location = new Location();
         location.getLocationFromAddressInThread(this, query, new Location.OnLocationSearchFinish() {
             @Override
-            public void onLocationSearchFinished(LatLng location) {
-                Log.v(TAG, "Finded longitude " + location.longitude);
-                Log.v(TAG, "Finded longitude " + location.latitude);
+            public void onLocationSearchFinished(final LatLng location) {
+                Log.v(TAG, getString(R.string.longitude_place_info) + location.longitude);
+                Log.v(TAG, getString(R.string.latitude_place_info) + location.latitude);
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                                new LatLng(location.latitude, location.longitude), 12));
+                    }
+                });
+
+
                 launchTwitter(location.latitude, location.longitude );
 
             }
@@ -186,28 +199,44 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
     private void launchTwitter(double latitude, double longitud) {
         AsyncTwitter twitter = new TwitterHelper(this).getAsyncTwitter();
         TwitterListener listener = new TwitterAdapter() {
-            @Override public void updatedStatus(Status status) {
-                System.out.println("Successfully updated the status to [" +
-                        status.getText() + "].");
-            }
 
             @Override
             public void searched(QueryResult queryResult) {
                 List<Status> resultsTweets = queryResult.getTweets();
 
                 int count = 0;
-                for (Status tweet : resultsTweets){
+                for (final Status tweet : resultsTweets){
                     if (tweet.getGeoLocation() !=null){
                         count++;
                         Tweet localTweet = new Tweet(tweet.getId(),tweet.getUser().getScreenName(),
                                 tweet.getUser().getProfileImageURL(), tweet.getText(), mSearchedAddress,
                                 tweet.getGeoLocation().getLatitude(), tweet.getGeoLocation().getLongitude());
-                        LatLng latLng = new LatLng(localTweet.getLatitude(), localTweet.getLongitud());
-                        mGoogleMap.addMarker(new MarkerOptions().position(latLng).title(tweet.getText()));
+                        //localTweet.setImage(takeImage(tweet.getUser().getProfileImageURL()));
+
+
+
+
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Log.v(TAG, "Lat" + tweet.getGeoLocation().getLatitude());
+                                Log.v(TAG, "Long" + tweet.getGeoLocation().getLongitude());
+                                MarkerOptions marker = new MarkerOptions().position
+                                        (new LatLng(tweet.getGeoLocation().getLatitude(), tweet.getGeoLocation().getLongitude())).title(tweet.getText());
+
+                                mGoogleMap.addMarker(marker);
+
+                            }
+                        });
+
+
 
                     }
                 }
-                Log.v(TAG, "Number of results: " + count);
+                Log.v(TAG, getString(R.string.number_result_info) + count);
+                if (count==0){
+                    Toast.makeText(mActivity.getApplicationContext(), getString(R.string.no_results_message), Toast.LENGTH_SHORT).show();
+                }
 
 
             }
@@ -221,6 +250,24 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
         query.geoCode(location , 50, unit);
         twitter.search(query);
 
+        //FilterQuery filter = new FilterQuery();
 
+
+    }
+
+    private Bitmap takeImage(String stringUrl){
+        try {
+            URL url = new URL(stringUrl);
+            HttpURLConnection conn = null;
+            conn = (HttpURLConnection) url.openConnection();
+            conn.setDoInput(true);
+            conn.connect();
+            InputStream is = conn.getInputStream();
+            Bitmap bmImg = BitmapFactory.decodeStream(is);
+            return bmImg;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

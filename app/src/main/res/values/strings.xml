@@ -6,4 +6,8 @@
     <string name="error_network">It looks like there\'s no network connection right now, showing last tweets from history</string>
     <string name="twiiter_auth_ok">Twitter authorization finished successfully</string>
     <string name="authorize_this_app">Authorize this app</string>
+    <string name="longitude_place_info">"Longitude of the place: "</string>
+    <string name="latitude_place_info">"Latitude of the place: "</string>
+    <string name="number_result_info">"Number of results: "</string>
+    <string name="no_results_message">No results</string>
 </resources>
