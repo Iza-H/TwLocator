@@ -12,9 +12,11 @@ import android.util.Log;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.model.LatLng;
 
 import io.projectandroid.twlocator.R;
 import io.projectandroid.twlocator.providers.SearchRecentValuesProvider;
+import io.projectandroid.twlocator.utils.Location;
 
 public class SearchMapActivity extends AppCompatActivity {
 
@@ -31,16 +33,6 @@ public class SearchMapActivity extends AppCompatActivity {
         setContentView(R.layout.activity_search_map);
 
         setupMap();
-
-
-
-
-        /*final Intent queryIntent = getIntent();
-        final String queryAction = queryIntent.getAction();
-        if (Intent.ACTION_SEARCH.equals(queryAction))
-        {
-            processSearchQuery(queryIntent.getStringExtra(SearchManager.QUERY));
-        }*/
     }
 
     /*@Override
@@ -66,8 +58,9 @@ public class SearchMapActivity extends AppCompatActivity {
         mSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                processSearchQuery(query);
-                mSearchView.setIconifiedByDefault(true);
+                saveSuggestionQuery(query);
+                searchLatLngOfQuery(query);
+                mSearchView.clearFocus();
                 return false;
             }
 
@@ -148,14 +141,14 @@ public class SearchMapActivity extends AppCompatActivity {
 
     }
 
-    private void processSearchQuery(String query){
+    private void saveSuggestionQuery(String query){
         Log.v(TAG, query);
-        SearchRecentSuggestions suggestions =
-                new SearchRecentSuggestions(this,
-                        SearchRecentValuesProvider.AUTHORITY,
-                        SearchRecentValuesProvider.MODE);
+
+        SearchRecentSuggestions suggestions = new SearchRecentSuggestions(this, SearchRecentValuesProvider.AUTHORITY, SearchRecentValuesProvider.MODE);
         suggestions.saveRecentQuery(query, null);
     }
+
+
 
     private void clearHistory(){
         SearchRecentSuggestions suggestions =
@@ -172,4 +165,19 @@ public class SearchMapActivity extends AppCompatActivity {
         }
         mGoogleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
     }
+
+    private void searchLatLngOfQuery(String query){
+        Location location = new Location();
+        location.getLocationFromAddressInThread(this, query, new Location.OnLocationSearchFinish() {
+            @Override
+            public void onLocationSearchFinished(LatLng location) {
+                Log.v(TAG, "Finded longitude " + location.longitude);
+                Log.v(TAG, "Finded longitude " + location.latitude);
+
+            }
+        });
+
+
+    }
+
 }
