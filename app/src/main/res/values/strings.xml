@@ -3,4 +3,7 @@
     <string name="menu_option_search">Search</string>
     <string name="search_hint">Search city</string>
     <string name="menu_option_clear_history">Clear history</string>
+    <string name="error_network">It looks like there\'s no network connection right now, showing last tweets from history</string>
+    <string name="twiiter_auth_ok">Twitter authorization finished successfully</string>
+    <string name="authorize_this_app">Authorize this app</string>
 </resources>
