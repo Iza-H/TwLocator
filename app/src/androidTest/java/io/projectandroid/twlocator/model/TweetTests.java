@@ -27,15 +27,15 @@ public class TweetTests extends AndroidTestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        sut = new Tweet(ID, NAME_USER, PROFILE_IMAGE_URL, TEXT, SEARCHED_ADDRRESS, LATITUDE, LONGITUD);
+        sut = new Tweet(NAME_USER, PROFILE_IMAGE_URL, TEXT, SEARCHED_ADDRRESS, LATITUDE, LONGITUD);
     }
 
     public void testCanCreateATweet(){
-        final Tweet sut = new Tweet(ID, NAME_USER, PROFILE_IMAGE_URL, TEXT, SEARCHED_ADDRRESS, LATITUDE, LONGITUD);
         assertNotNull(sut);
     }
 
     public void testCanGetIdOfTheTweet(){
+        sut.setId(ID);
         assertEquals(ID, sut.getId());
     }
 

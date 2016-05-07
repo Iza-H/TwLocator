@@ -24,8 +24,8 @@ public class TweetsTests extends AndroidTestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        Tweet t1 = new Tweet(ID, NAME_USER, PROFILE_IMAGE_URL, TEXT, SEARCHED_ADDRRESS, LATITUDE, LONGITUD);;
-        t2 = new Tweet(ID, NAME_USER, PROFILE_IMAGE_URL, TEXT, SEARCHED_ADDRRESS, LATITUDE, LONGITUD);;
+        Tweet t1 = new Tweet( NAME_USER, PROFILE_IMAGE_URL, TEXT, SEARCHED_ADDRRESS, LATITUDE, LONGITUD);;
+        t2 = new Tweet(NAME_USER, PROFILE_IMAGE_URL, TEXT, SEARCHED_ADDRRESS, LATITUDE, LONGITUD);;
         Tweet[] arrayOfTweets={t1, t2};
         List<Tweet> tweetsList= Arrays.asList(arrayOfTweets);
         mTweets= Tweets.createTweets(tweetsList);
@@ -37,7 +37,8 @@ public class TweetsTests extends AndroidTestCase {
 
     public void testAddNewTweetToTweets() throws Exception {
         int index = 3;
-        Tweet t = new Tweet(index, NAME_USER, PROFILE_IMAGE_URL, TEXT, SEARCHED_ADDRRESS, LATITUDE, LONGITUD);
+        Tweet t = new Tweet(NAME_USER, PROFILE_IMAGE_URL, TEXT, SEARCHED_ADDRRESS, LATITUDE, LONGITUD);
+        t.setId(index);
         mTweets.add(t);
         assertEquals(index, mTweets.getTweets().size());
         assertEquals(mTweets.getTweets().get(index-1).getId(), 3);
