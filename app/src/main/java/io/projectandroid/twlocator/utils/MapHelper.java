@@ -1,9 +1,15 @@
 package io.projectandroid.twlocator.utils;
 
+import android.app.Activity;
 import android.content.Context;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.TextView;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -13,6 +19,8 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.clustering.Cluster;
 import com.google.maps.android.clustering.ClusterItem;
 import com.google.maps.android.clustering.ClusterManager;
+
+import java.util.ArrayList;
 
 import io.projectandroid.twlocator.R;
 
@@ -43,6 +51,8 @@ public class MapHelper {
         googleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
         googleMap.getUiSettings().setScrollGesturesEnabled(true);
         googleMap.getUiSettings().setZoomControlsEnabled(true);
+        //Central mapa to Spain:
+        moveCamara(googleMap, 40.4167754,-3.7037902, 3 );
         mContext = context;
 
         // Setting a custom info window adapter for the google map
@@ -86,14 +96,17 @@ public class MapHelper {
     }
 
     public static void moveCamara(GoogleMap googleMap, double latitude, double longitude){
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                new LatLng(latitude, longitude), 20));
+        moveCamara(googleMap, latitude, longitude, 9 );
     }
 
-    public void addItems( double latitude, double longitude, String text) {
+    public static void moveCamara(GoogleMap googleMap, double latitude, double longitude, int zoom){
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), zoom));
+    }
+
+    public void addItems( double latitude, double longitude, String text, String author) {
         double lat = latitude;
         double lng = longitude;
-        ItemMarker offsetItem = new ItemMarker(lat, lng);
+        ItemMarker offsetItem = new ItemMarker(lat, lng, text, author);
         mClusterManager.addItem(offsetItem);
     }
 
@@ -125,7 +138,8 @@ public class MapHelper {
         });
 
 
-        googleMap.setInfoWindowAdapter(clusterManager.getMarkerManager());
+        //googleMap.setInfoWindowAdapter(clusterManager.getMarkerManager());
+        googleMap.setInfoWindowAdapter(new MyCustomAdapterForCluster());
         clusterManager.getClusterMarkerCollection().setOnInfoWindowAdapter(new MyCustomAdapterForCluster());
         clusterManager.getMarkerCollection().setOnInfoWindowAdapter(new MyCustomAdapterForCluster());
 
@@ -147,21 +161,28 @@ public class MapHelper {
         public View getInfoContents(Marker marker) {
             LayoutInflater inflater = LayoutInflater.from(mContext);
             View view = inflater.inflate(R.layout.map_info_window, null);
+            view.setBackgroundColor(0xFFFFFFFF);
+            ListView list = (ListView) view.findViewById(R.id.list_with_results);
+            //list.setFastScrollAlwaysVisible(true);
+            //TextView test= (TextView) view.findViewById(R.id.list_test);
+            //test.setText("TEST");
+            TweetsListAdapter adapter = null;
+            ArrayList<ItemMarker> valuesList = new ArrayList<>();
             if (mClickedCluster != null) {
                 Log.v(TAG, "Clicked cluser");
+                valuesList.addAll(mClickedCluster.getItems());
+            }else if (mClickedClusterItem != null){
+                Log.v(TAG, "Cluser item clicked");
+                valuesList.add(mClickedClusterItem);
 
-
-                for (int i = 0; i<mClickedCluster.getSize(); i++) {
-
-                }
-
-            }else if (mClickedCluster != null){
-                Log.v(TAG, "Clicked cluser item");
-
-                }
+            }
+            adapter = new TweetsListAdapter(mContext, valuesList);
+            list.setAdapter(adapter);
+            adapter.notifyDataSetChanged();
 
 
             return view;
+
         }
 
     }
@@ -173,14 +194,25 @@ public class MapHelper {
 
 class ItemMarker implements ClusterItem {
     private final LatLng mPosition;
+    private final String mText;
+    private final String mAutor;
 
-    public ItemMarker(double lat, double lng) {
+    public ItemMarker(double lat, double lng, String text, String autor) {
+        mText = text;
+        mAutor = autor;
         mPosition = new LatLng(lat, lng);
     }
 
     @Override
     public LatLng getPosition() {
         return mPosition;
+    }
+
+    public String getText(){
+        return mText;
+    }
+    public String getAutor(){
+        return mAutor;
     }
 }
 
@@ -226,3 +258,40 @@ class ItemMarker implements ClusterItem {
     }
 
 }*/
+
+class TweetsListAdapter extends ArrayAdapter<String> {
+    private final String TAG = "TweetsListAdapter";
+    private final Context context;
+    private ArrayList<ItemMarker> valuesList;
+
+    public TweetsListAdapter(Context context, ArrayList<ItemMarker> valuesList) {
+        super(context, R.layout.list_single_tweet);
+        this.context = context;
+        this.valuesList = valuesList;
+
+    }
+
+    @Override
+    public int getCount() {
+        return valuesList.size();
+    }
+
+
+    @Override
+    public View getView(int position, View view, ViewGroup parent) {
+        LayoutInflater inflater = LayoutInflater.from(context);
+        View rowView= inflater.inflate(R.layout.list_single_tweet, null, true);
+        TextView txtText = (TextView) rowView.findViewById(R.id.list_text);
+        TextView txtAutor= (TextView) rowView.findViewById(R.id.list_autor);
+        ImageView imageView = (ImageView) rowView.findViewById(R.id.img_menu);
+        txtText.setText(valuesList.get(position).getText());
+        txtAutor.setText(valuesList.get(position).getAutor());
+        //int resID = context.getResources().getIdentifier(menu.getListMeals().get(position).getImg() , "drawable", context.getPackageName());
+        //imageView.setImageResource(resID);
+        return rowView;
+    }
+
+
+
+
+}
