@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             android:layout_width="match_parent"
+             android:layout_width="@dimen/activity_info_window_width"
              android:layout_height="match_parent"
     android:layout_marginLeft="5dp">
-    <TableRow android:layout_width="match_parent">
+    <TableRow android:layout_width="@dimen/activity_info_window_width">
         <ImageView
             android:id="@+id/img_menu"
             android:layout_width="50dp"
@@ -11,13 +11,13 @@
             android:layout_marginRight="15dp"
             android:layout_marginTop="5dp"
             android:layout_marginBottom="5dp"
-            android:src="@drawable/user_picture"/>
+            android:src="@drawable/places_ic_search"/>
         <LinearLayout android:layout_height="match_parent"
             android:layout_width="match_parent"
             android:orientation="vertical">
             <TextView
                 android:id="@+id/list_text"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingBottom="5dp"
                 android:textColor="@color/common_google_signin_btn_text_light"

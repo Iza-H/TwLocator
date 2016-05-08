@@ -48,6 +48,8 @@
                     android:scheme="oauth" />
             </intent-filter>
         </activity>
+        <activity android:name="io.projectandroid.twlocator.activities.TweetsListActivity" >
+        </activity>
         <provider android:name=".providers.SearchRecentValuesProvider"
                   android:authorities="io.projectandroid.twlocator.providers.SearchRecentValuesProvider">
         </provider>

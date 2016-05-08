@@ -1,12 +1,10 @@
 package io.projectandroid.twlocator.utils;
 
-import android.app.Activity;
+
 import android.content.Context;
-import android.util.Log;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -23,8 +21,14 @@ import com.google.maps.android.clustering.ClusterManager;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.Collection;
 
 import io.projectandroid.twlocator.R;
+import io.projectandroid.twlocator.activities.TweetsListActivity;
+import io.projectandroid.twlocator.model.ItemMarker;
+import io.projectandroid.twlocator.adapters.TweetsListAdapter;
+import io.projectandroid.twlocator.model.Tweet;
+import io.projectandroid.twlocator.model.Tweets;
 
 
 /**
@@ -32,22 +36,25 @@ import io.projectandroid.twlocator.R;
  */
 public class MapHelper {
     public static final String TAG = "MapHelper";
+
+    //Central point:
+    public static final double LATITUDE_MADRID = 40.4167754;
+    public static final double LONGITUDE_MADRID = -3.7037902;
+
+
     private ItemMarker  mClickedClusterItem;
     private Cluster<ItemMarker> mClickedCluster;
     private ClusterManager<ItemMarker> mClusterManager;
     private Context mContext;
-    private View mView;
+    private GoogleMap mMap;
+    private ArrayList<Tweet> mTweetsCluster;
+
 
 
 
     public static void addMarkerToTheMap(GoogleMap googleMap, double latitude, double longitude, String text){
-        Log.v(TAG, "Lat " + latitude);
-        Log.v(TAG, "Long " + longitude);
-        MarkerOptions marker = new MarkerOptions().position
-                (new LatLng(latitude, longitude)).title(text);
-
+        MarkerOptions marker = new MarkerOptions().position(new LatLng(latitude, longitude)).title(text);
         googleMap.addMarker(marker);
-
     }
 
     public void clearMap(GoogleMap map){
@@ -62,48 +69,10 @@ public class MapHelper {
         googleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
         googleMap.getUiSettings().setScrollGesturesEnabled(true);
         googleMap.getUiSettings().setZoomControlsEnabled(true);
-        //Central mapa to Spain:
+        //Central map to Spain:
         moveCamaraToStartPoint(googleMap);
+        mMap=googleMap;
         mContext = context;
-
-        // Setting a custom info window adapter for the google map
-        /*googleMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
-
-            @Override
-            public View getInfoWindow(Marker marker) {
-                return null;
-            }
-
-
-            // Defines the contents of the InfoWindow
-            @Override
-            public View getInfoContents(Marker arg0) {
-
-                // Getting view from the layout file info_window_layout
-                LayoutInflater inflater = LayoutInflater.from(context);
-                View v = inflater.inflate(R.layout.info_window_layout, null);
-
-                // Getting the position from the marker
-                LatLng latLng = arg0.getPosition();
-
-                // Getting reference to the TextView to set latitude
-                TextView tvLat = (TextView) v.findViewById(R.id.tv_lat);
-
-                // Getting reference to the TextView to set longitude
-                TextView tvLng = (TextView) v.findViewById(R.id.tv_lng);
-
-                // Setting the latitude
-                tvLat.setText("Latitude:" + latLng.latitude);
-
-                // Setting the longitude
-                tvLng.setText("Longitude:"+ latLng.longitude);
-
-                // Returning the view containing InfoWindow contents
-                return v;
-
-            }
-        });*/
-
     }
 
     public static void moveCamara(GoogleMap googleMap, double latitude, double longitude){
@@ -115,7 +84,7 @@ public class MapHelper {
     }
 
     public static void moveCamaraToStartPoint(GoogleMap googleMap){
-        moveCamara(googleMap, 40.4167754,-3.7037902, 3 );
+        moveCamara(googleMap, LATITUDE_MADRID, LONGITUDE_MADRID, 3 );
     }
 
     public static void zoomIn(GoogleMap googleMap){
@@ -123,10 +92,10 @@ public class MapHelper {
     }
 
 
-    public void addItems( double latitude, double longitude, String text, String author) {
+    public void addItems(  double latitude, double longitude, String text, String author, String pictureURL) {
         double lat = latitude;
         double lng = longitude;
-        ItemMarker offsetItem = new ItemMarker(lat, lng, text, author);
+        ItemMarker offsetItem = new ItemMarker( lat, lng, text, author, pictureURL);
         mClusterManager.addItem(offsetItem);
 
     }
@@ -161,7 +130,22 @@ public class MapHelper {
         mClusterManager.getClusterMarkerCollection().setOnInfoWindowAdapter(new MyCustomAdapterForCluster());
         mClusterManager.getMarkerCollection().setOnInfoWindowAdapter(new MyCustomAdapterForCluster());
 
+        googleMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+            @Override
+            public void onInfoWindowClick(Marker marker) {
+                if (mClickedCluster!=null){
+                    Intent myIntent = new Intent(mContext, TweetsListActivity.class);
+                    myIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    myIntent.putExtra(TweetsListActivity.TWEETS_VALUES, mTweetsCluster);
+                    mContext.startActivity(myIntent);
+                }
+
+
+            }
+        });
+
     }
+
 
 
 
@@ -177,124 +161,59 @@ public class MapHelper {
         public View getInfoContents(Marker marker) {
             LayoutInflater inflater = LayoutInflater.from(mContext);
             View view = inflater.inflate(R.layout.map_info_window, null);
-           mView.setBackgroundColor(0xFFFFFFFF);
-            ListView list = (ListView) mView.findViewById(R.id.list_with_results);
-            TweetsListAdapter adapter = null;
-            ArrayList<ItemMarker> valuesList = new ArrayList<>();
+            view.setBackgroundColor(0xFFFFFFFF);
+
             if (mClickedCluster != null) {
+                ListView list = (ListView) view.findViewById(R.id.list_with_results);
+                TweetsListAdapter adapter = null;
+                ArrayList<ItemMarker> valuesList = new ArrayList<>();
                 valuesList.addAll(mClickedCluster.getItems());
-            }else if (mClickedClusterItem != null){
-                valuesList.add(mClickedClusterItem);
+                mTweetsCluster = parseItemsMarketColection(valuesList);
+                TextView txtText = (TextView) view.findViewById(R.id.more_info_text);
+                txtText.setText(R.string.more_txt);
+                adapter = new TweetsListAdapter(mContext, valuesList);
+                list.setAdapter(adapter);
+                adapter.notifyDataSetChanged();
+            }
+            else if (mClickedClusterItem != null){
+                view = inflater.inflate(R.layout.list_single_tweet, null);
+                TextView txtText = (TextView) view.findViewById(R.id.list_text);
+                TextView txtAutor= (TextView) view.findViewById(R.id.list_autor);
+                ImageView imageView = (ImageView) view.findViewById(R.id.img_menu);
+                txtText.setText(mClickedClusterItem.getText());
+                txtAutor.setText(mClickedClusterItem.getAutor());
+
+                if (mClickedClusterItem.getPictureUrl()!=null){
+                    Picasso.with(mContext).load(mClickedClusterItem.getPictureUrl()).into(imageView);
+                }
+
+
+
 
             }
-            adapter = new TweetsListAdapter(mContext, valuesList);
-            list.setAdapter(adapter);
-            adapter.notifyDataSetChanged();
 
-
-            return mView;
+            return view;
 
         }
 
     }
 
+    private ArrayList<Tweet>  parseItemsMarketColection(ArrayList<ItemMarker> items){
+        ArrayList<Tweet> result = new ArrayList<Tweet>();
+        for (int i = 0; i<items.size(); i++){
+                Tweet t = new Tweet(items.get(i).getAutor(),items.get(i).getPictureUrl(),
+                        items.get(i).getText(), null, items.get(i).getPosition().latitude, items.get(i).getPosition().longitude);
+                result.add(t);
+            }
+        return result;
 
-
-
-}
-
-class ItemMarker implements ClusterItem {
-    private final LatLng mPosition;
-    private final String mText;
-    private final String mAutor;
-
-    public ItemMarker(double lat, double lng, String text, String autor) {
-        mText = text;
-        mAutor = autor;
-        mPosition = new LatLng(lat, lng);
-    }
-
-    @Override
-    public LatLng getPosition() {
-        return mPosition;
-    }
-
-    public String getText(){
-        return mText;
-    }
-    public String getAutor(){
-        return mAutor;
-    }
-}
-
-
-
-/*class MyCustomAdapterForCluster implements GoogleMap.InfoWindowAdapter {
-    private static final String TAG = "CustomAdapterForCluster";
-    private final View myContentsView;
-
-    MyCustomAdapterForCluster() {
-        myContentsView = getLayoutInflater().inflate(
-                R.layout.info_window, null);
-    }
-
-    @Override
-    public View getInfoWindow(Marker marker) {
-        return null;
-    }
-
-    @Override
-    public View getInfoContents(Marker marker) {
-        //if (mClickedCluster != null) {
-            //for (MarkerItem item : clickedCluster.getItems()) {
-                // Extract data from each item in the cluster as needed
-            //}
-        //}
-        // build your custom view
-        // ...
-
-        Log.v(TAG, "Clicked");
-        return null;
-    }
-
-}*/
-
-class TweetsListAdapter extends ArrayAdapter<String> {
-    private final String TAG = "TweetsListAdapter";
-    private final Context context;
-    private ArrayList<ItemMarker> valuesList;
-
-    public TweetsListAdapter(Context context, ArrayList<ItemMarker> valuesList) {
-        super(context, R.layout.list_single_tweet);
-        this.context = context;
-        this.valuesList = valuesList;
-
-    }
-
-    @Override
-    public int getCount() {
-        return valuesList.size();
-    }
-
-
-    @Override
-    public View getView(int position, View view, ViewGroup parent) {
-        LayoutInflater inflater = LayoutInflater.from(context);
-        View rowView= inflater.inflate(R.layout.list_single_tweet, null, true);
-        TextView txtText = (TextView) rowView.findViewById(R.id.list_text);
-        TextView txtAutor= (TextView) rowView.findViewById(R.id.list_autor);
-        ImageView imageView = (ImageView) rowView.findViewById(R.id.img_menu);
-        /*Picasso.with(context)
-                .load("http://pbs.twimg.com/profile_images/514107565702012929/08pdnbsJ_normal.jpeg")
-                .into(imageView);*/
-        txtText.setText(valuesList.get(position).getText());
-        txtAutor.setText(valuesList.get(position).getAutor());
-        //int resID = context.getResources().getIdentifier(menu.getListMeals().get(position).getImg() , "drawable", context.getPackageName());
-        //imageView.setImageResource(resID);
-        return rowView;
     }
 
 
 
 
 }
+
+
+
+

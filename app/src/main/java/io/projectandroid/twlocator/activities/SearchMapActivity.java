@@ -25,6 +25,7 @@ import io.projectandroid.twlocator.model.Tweets;
 import io.projectandroid.twlocator.model.db.DBConstants;
 import io.projectandroid.twlocator.model.db.dao.TweetDAO;
 import io.projectandroid.twlocator.providers.SearchRecentValuesProvider;
+import io.projectandroid.twlocator.utils.ImageDownloader;
 import io.projectandroid.twlocator.utils.Location;
 import io.projectandroid.twlocator.utils.MapHelper;
 import io.projectandroid.twlocator.utils.NetworkHelper;
@@ -98,28 +99,11 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
                 mSearchedAddress=query;
                 saveSuggestionQuery(query);
 
-                if (isInternetConnection == false){
+                if (isInternetConnection == true){
                     searchLatLngOfQuery(query);
                 } else  {
                     searchInHistory(query);
-                    /*TweetDAO tweetDAO = new TweetDAO();
-                    String[]arg = {query};
-                    final Tweets results = tweetDAO.queryBySelection(DBConstants.KEY_SEARCHED_ADDRESS, arg);
-                    if (results.size()==0){
-                        Toast.makeText(mContext, getString(R.string.no_results_message), Toast.LENGTH_SHORT).show();
-                    }else{
-                        for (int i = 0; i<results.size(); i++){
-                            //MapHelper.addMarkerToTheMap(mGoogleMap, results.get(i).getLatitude(),results.get(i).getLongitud(), results.get(i).getText() );
-                            mMapHelper.addItems(results.get(i).getLatitude(),results.get(i).getLongitud(), results.get(i).getText(), results.get(i).getUserName() );
-                        }
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                mMapHelper.moveCamara(mGoogleMap, results.get(0).getLatitude(), results.get(0).getLongitud());
 
-                            }
-                        });
-                    }*/
                 }
 
                 return false;
@@ -148,29 +132,11 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
                 mSearchedAddress=suggest;
 
 
-                if (isInternetConnection == false){
+                if (isInternetConnection == true){
                     searchLatLngOfQuery(suggest);
                 } else  {
                     searchInHistory(suggest);
-                    /*TweetDAO tweetDAO = new TweetDAO();
-                    String[]arg = {suggest};
-                    final Tweets results = tweetDAO.queryBySelection(DBConstants.KEY_SEARCHED_ADDRESS, arg);
-                    if (results.size()==0){
-                        Toast.makeText(mContext, getString(R.string.no_results_message), Toast.LENGTH_SHORT).show();
-                    }else{
-                        for (int i = 0; i<results.size(); i++){
-                            //MapHelper.addMarkerToTheMap(mGoogleMap, results.get(i).getLatitude(),results.get(i).getLongitud(), results.get(i).getText() );
-                            mMapHelper.addItems(results.get(i).getLatitude(),results.get(i).getLongitud(), results.get(i).getText(), results.get(i).getUserName() );
-                        }
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                mMapHelper.moveCamara(mGoogleMap, results.get(0).getLatitude(), results.get(0).getLongitud());
 
-                            }
-                        });
-
-                    }*/
                 }
 
 
@@ -285,9 +251,11 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
                         for (int i= 0; i<results.size(); i++){
                             if (results.get(i).getSearchedAddrress().equalsIgnoreCase(mSearchedAddress)){
                                 isSaved=true;
+                                localTweet.setId(results.get(i).getId());
                             }
                         }
                     }
+
                     if (isSaved==false){
                         tweetDAO.insert(localTweet);
                     }
@@ -297,7 +265,8 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
                             @Override
                             public void run() {
                         //MapHelper.addMarkerToTheMap(mGoogleMap, tweet.getGeoLocation().getLatitude(), tweet.getGeoLocation().getLongitude(), tweet.getText());
-                        mMapHelper.addItems( localTweet.getLatitude(), localTweet.getLongitud(), localTweet.getText() , localTweet.getUserName());
+                        mMapHelper.addItems(localTweet.getLatitude(), localTweet.getLongitud(),
+                                localTweet.getText() , localTweet.getUserName(), localTweet.getUserProfileImage());
                       }
                     });
 
@@ -323,7 +292,7 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
         twitter.addListener(listener);
 
         Query query = new Query();
-        query.count(100);
+        query.count(50);
         GeoLocation location = new GeoLocation(latitude, longitud);
         String unit = Query.Unit.km.toString();
         query.geoCode(location , 20, unit);
@@ -342,7 +311,8 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
         }else{
             for (int i = 0; i<results.size(); i++){
                 //MapHelper.addMarkerToTheMap(mGoogleMap, results.get(i).getLatitude(),results.get(i).getLongitud(), results.get(i).getText() );
-                mMapHelper.addItems(results.get(i).getLatitude(),results.get(i).getLongitud(), results.get(i).getText(), results.get(i).getUserName() );
+                mMapHelper.addItems(results.get(i).getLatitude(),results.get(i).getLongitud(),
+                        results.get(i).getText(), results.get(i).getUserName(), results.get(i).getUserProfileImage() );
             }
             runOnUiThread(new Runnable() {
                 @Override

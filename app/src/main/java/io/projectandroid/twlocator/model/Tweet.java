@@ -1,11 +1,12 @@
 package io.projectandroid.twlocator.model;
 
+import java.io.Serializable;
 import java.sql.Blob;
 
 /**
  * Created by izabela on 07/05/16.
  */
-public class Tweet implements ModelPersistable {
+public class Tweet implements ModelPersistable, Serializable {
     private long mId;
     private long mTwitterId;
     private String mUserName;
@@ -18,6 +19,15 @@ public class Tweet implements ModelPersistable {
 
     public Tweet(long twitterId, String userName, String userProfileImage, String text, String searchedAddrress, double latitude, double longitud) {
         mTwitterId = twitterId;
+        mUserName = userName;
+        mUserProfileImage = userProfileImage;
+        mText = text;
+        mSearchedAddrress = searchedAddrress;
+        mLatitude = latitude;
+        mLongitud = longitud;
+    }
+
+    public Tweet( String userName, String userProfileImage, String text, String searchedAddrress, double latitude, double longitud) {
         mUserName = userName;
         mUserProfileImage = userProfileImage;
         mText = text;
