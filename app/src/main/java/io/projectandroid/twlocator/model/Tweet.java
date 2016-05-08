@@ -7,6 +7,7 @@ import java.sql.Blob;
  */
 public class Tweet implements ModelPersistable {
     private long mId;
+    private long mTwitterId;
     private String mUserName;
     private String mUserProfileImage;
     private String mText;
@@ -15,7 +16,8 @@ public class Tweet implements ModelPersistable {
     private double mLongitud;
     private byte[] mPicture;
 
-    public Tweet(String userName, String userProfileImage, String text, String searchedAddrress, double latitude, double longitud) {
+    public Tweet(long twitterId, String userName, String userProfileImage, String text, String searchedAddrress, double latitude, double longitud) {
+        mTwitterId = twitterId;
         mUserName = userName;
         mUserProfileImage = userProfileImage;
         mText = text;
@@ -25,7 +27,8 @@ public class Tweet implements ModelPersistable {
     }
 
 
-    public Tweet(String userName, String userProfileImage, String text, String searchedAddrress, double latitude, double longitud, byte[] picture) {
+    public Tweet(long twitterId, String userName, String userProfileImage, String text, String searchedAddrress, double latitude, double longitud, byte[] picture) {
+        mTwitterId = twitterId;
         mUserName = userName;
         mUserProfileImage = userProfileImage;
         mText = text;
@@ -98,4 +101,14 @@ public class Tweet implements ModelPersistable {
     public void setPicture(byte[] picture) {
         mPicture = picture;
     }
+
+
+    public long getTwitterId() {
+        return mTwitterId;
+    }
+
+    public void setTwitterId(long twitterId) {
+        this.mTwitterId = twitterId;
+    }
+
 }

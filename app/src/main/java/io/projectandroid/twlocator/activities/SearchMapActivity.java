@@ -3,11 +3,7 @@ package io.projectandroid.twlocator.activities;
 import android.app.SearchManager;
 import android.content.Context;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteCursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.provider.SearchRecentSuggestions;
-import android.support.v4.widget.CursorAdapter;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.SearchView;
@@ -15,17 +11,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.util.Log;
 import android.widget.Toast;
-
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.model.LatLng;
 
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.ref.WeakReference;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.List;
 
 import io.projectandroid.twlocator.R;
@@ -75,7 +66,7 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
         }
 
         if (NetworkHelper.isNetworkConnectionOK(new WeakReference<>(getApplication()))) {
-            Log.v(TAG, "Twitter connection");
+            Log.v(TAG, getString(R.string.twitter_connection_info));
             isInternetConnection=true;
             mTwitterTask = new ConnectTwitterTask(this);
             mTwitterTask.setListener(this);
@@ -88,7 +79,7 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
 
         mMapHelper = new MapHelper();
         mMapHelper.setupMap(mGoogleMap, mContext );
-        mMapHelper.setUpCluster(mGoogleMap, mContext );
+        mMapHelper.setUpCluster(mGoogleMap, mContext);
     }
 
 
@@ -103,20 +94,32 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
         mSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                mGoogleMap.clear();
+                mMapHelper.clearMap(mGoogleMap);
                 mSearchedAddress=query;
                 saveSuggestionQuery(query);
 
-                if (isInternetConnection == true){
+                if (isInternetConnection == false){
                     searchLatLngOfQuery(query);
                 } else  {
-                    TweetDAO tweetDAO = new TweetDAO();
+                    searchInHistory(query);
+                    /*TweetDAO tweetDAO = new TweetDAO();
                     String[]arg = {query};
-                    Tweets results = tweetDAO.queryBySelection(DBConstants.KEY_SEARCHED_ADDRESS, arg);
-                    for (int i = 0; i<results.size(); i++){
-                        //MapHelper.addMarkerToTheMap(mGoogleMap, results.get(i).getLatitude(),results.get(i).getLongitud(), results.get(i).getText() );
-                        mMapHelper.addItems(results.get(i).getLatitude(),results.get(i).getLongitud(), results.get(i).getText(), results.get(i).getUserName() );
-                    }
+                    final Tweets results = tweetDAO.queryBySelection(DBConstants.KEY_SEARCHED_ADDRESS, arg);
+                    if (results.size()==0){
+                        Toast.makeText(mContext, getString(R.string.no_results_message), Toast.LENGTH_SHORT).show();
+                    }else{
+                        for (int i = 0; i<results.size(); i++){
+                            //MapHelper.addMarkerToTheMap(mGoogleMap, results.get(i).getLatitude(),results.get(i).getLongitud(), results.get(i).getText() );
+                            mMapHelper.addItems(results.get(i).getLatitude(),results.get(i).getLongitud(), results.get(i).getText(), results.get(i).getUserName() );
+                        }
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mMapHelper.moveCamara(mGoogleMap, results.get(0).getLatitude(), results.get(0).getLongitud());
+
+                            }
+                        });
+                    }*/
                 }
 
                 return false;
@@ -136,25 +139,38 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
 
             @Override
             public boolean onSuggestionClick(int position) {
-                mGoogleMap.clear();
+                mMapHelper.clearMap(mGoogleMap);
                 mSearchView.setIconified(true);
                 Cursor cursor = (Cursor) mSearchView.getSuggestionsAdapter().getItem(
                         position);
                 int indexColumnSuggestText = 2;
                 String suggest = cursor.getString(indexColumnSuggestText);
                 mSearchedAddress=suggest;
-                Log.v(TAG, getString(R.string.secected_suggestion_info) + suggest);
 
-                if (isInternetConnection == true){
+
+                if (isInternetConnection == false){
                     searchLatLngOfQuery(suggest);
                 } else  {
-                    TweetDAO tweetDAO = new TweetDAO();
+                    searchInHistory(suggest);
+                    /*TweetDAO tweetDAO = new TweetDAO();
                     String[]arg = {suggest};
-                    Tweets results = tweetDAO.queryBySelection(DBConstants.KEY_SEARCHED_ADDRESS, arg);
-                    for (int i = 0; i<results.size(); i++){
-                        //MapHelper.addMarkerToTheMap(mGoogleMap, results.get(i).getLatitude(),results.get(i).getLongitud(), results.get(i).getText() );
-                        mMapHelper.addItems(results.get(i).getLatitude(),results.get(i).getLongitud(), results.get(i).getText(), results.get(i).getUserName() );
-                    }
+                    final Tweets results = tweetDAO.queryBySelection(DBConstants.KEY_SEARCHED_ADDRESS, arg);
+                    if (results.size()==0){
+                        Toast.makeText(mContext, getString(R.string.no_results_message), Toast.LENGTH_SHORT).show();
+                    }else{
+                        for (int i = 0; i<results.size(); i++){
+                            //MapHelper.addMarkerToTheMap(mGoogleMap, results.get(i).getLatitude(),results.get(i).getLongitud(), results.get(i).getText() );
+                            mMapHelper.addItems(results.get(i).getLatitude(),results.get(i).getLongitud(), results.get(i).getText(), results.get(i).getUserName() );
+                        }
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mMapHelper.moveCamara(mGoogleMap, results.get(0).getLatitude(), results.get(0).getLongitud());
+
+                            }
+                        });
+
+                    }*/
                 }
 
 
@@ -192,9 +208,11 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
     }
 
 
-
+    //Remove suggestions, clear DB and remove history data from db:
     private void clearHistory(){
         mSuggestions.clearHistory();
+        mMapHelper.clearMap(mGoogleMap);
+        mMapHelper.moveCamaraToStartPoint(mGoogleMap);
         TweetDAO tweetDAO = new TweetDAO();
         tweetDAO.deleteAll();
 
@@ -207,18 +225,23 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
         location.getLocationFromAddressInThread(this, query, new Location.OnLocationSearchFinish() {
             @Override
             public void onLocationSearchFinished(final LatLng location) {
-                Log.v(TAG, getString(R.string.longitude_place_info) + location.longitude);
-                Log.v(TAG, getString(R.string.latitude_place_info) + location.latitude);
+                if (location!=null){
+                    Log.v(TAG, getString(R.string.longitude_place_info) + location.longitude);
+                    Log.v(TAG, getString(R.string.latitude_place_info) + location.latitude);
 
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mMapHelper.moveCamara(mGoogleMap, location.latitude, location.longitude);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mMapHelper.moveCamara(mGoogleMap, location.latitude, location.longitude);
 
-                    }
-                });
+                        }
+                    });
 
-                launchTwitter(location.latitude, location.longitude );
+                    launchTwitter(location.latitude, location.longitude );
+                }else{
+                    Toast.makeText(getApplicationContext(), R.string.unknown_location_info, Toast.LENGTH_SHORT).show();
+                }
+
             }
         });
 
@@ -227,7 +250,7 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
 
     @Override
     public void twitterConnectionFinished() {
-        Toast.makeText(this, getString(R.string.twiiter_auth_ok), Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, getString(R.string.twiter_auth_ok), Toast.LENGTH_SHORT).show();
     }
 
     private void launchTwitter(final double latitude, final double longitud) {
@@ -242,35 +265,56 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
                 for (final Status tweet : resultsTweets){
                     final Tweet localTweet;
                     if (tweet.getGeoLocation() !=null) {
-                        count++;
-                        localTweet = new Tweet(tweet.getUser().getScreenName(),
+                        localTweet = new Tweet(tweet.getId(),tweet.getUser().getScreenName(),
                                 tweet.getUser().getProfileImageURL(), tweet.getText(), mSearchedAddress,
                                 tweet.getGeoLocation().getLatitude(), tweet.getGeoLocation().getLongitude());
                     }else {
-                        //Put default location for recived data without geolocation
-                        count++;
-                        localTweet = new Tweet(tweet.getUser().getScreenName(),
+                        //Put default location for data received without geolocation but from searching area:
+                        localTweet = new Tweet(tweet.getId(),tweet.getUser().getScreenName(),
                                 tweet.getUser().getProfileImageURL(), tweet.getText(), mSearchedAddress,
                                 latitude, longitud);
                     }
+                    count++;
                     TweetDAO tweetDAO = new TweetDAO();
-                    tweetDAO.insert(localTweet);
 
-                        runOnUiThread(new Runnable() {
+                    //Checking if the result was not already saved:
+                    String[]arg = {String.valueOf(localTweet.getTwitterId())};
+                    Tweets results = tweetDAO.queryBySelection(DBConstants.KEY_TWITTER_ID, arg);
+                    boolean isSaved=false;
+                    if (results!=null){
+                        for (int i= 0; i<results.size(); i++){
+                            if (results.get(i).getSearchedAddrress().equalsIgnoreCase(mSearchedAddress)){
+                                isSaved=true;
+                            }
+                        }
+                    }
+                    if (isSaved==false){
+                        tweetDAO.insert(localTweet);
+                    }
+
+
+                    runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                //MapHelper.addMarkerToTheMap(mGoogleMap, tweet.getGeoLocation().getLatitude(), tweet.getGeoLocation().getLongitude(), tweet.getText());
-                                mMapHelper.addItems( localTweet.getLatitude(), localTweet.getLongitud(), localTweet.getText() , localTweet.getUserName());
-
-
-                            }
-                        });
+                        //MapHelper.addMarkerToTheMap(mGoogleMap, tweet.getGeoLocation().getLatitude(), tweet.getGeoLocation().getLongitude(), tweet.getText());
+                        mMapHelper.addItems( localTweet.getLatitude(), localTweet.getLongitud(), localTweet.getText() , localTweet.getUserName());
+                      }
+                    });
 
                    // }
                 }
                 Log.v(TAG, getString(R.string.number_result_info) + count);
                 if (count==0){
                     Toast.makeText(mContext, getString(R.string.no_results_message), Toast.LENGTH_SHORT).show();
+                }else{
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mMapHelper.zoomIn(mGoogleMap);
+
+                        }
+                    });
+
                 }
 
 
@@ -289,19 +333,27 @@ public class SearchMapActivity extends AppCompatActivity implements ConnectTwitt
 
     }
 
-    private Bitmap takeImage(String stringUrl){
-        try {
-            URL url = new URL(stringUrl);
-            HttpURLConnection conn = null;
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setDoInput(true);
-            conn.connect();
-            InputStream is = conn.getInputStream();
-            Bitmap bmImg = BitmapFactory.decodeStream(is);
-            return bmImg;
-        } catch (IOException e) {
-            e.printStackTrace();
+    private void searchInHistory(String query){
+        TweetDAO tweetDAO = new TweetDAO();
+        String[]arg = {query};
+        final Tweets results = tweetDAO.queryBySelection(DBConstants.KEY_SEARCHED_ADDRESS, arg);
+        if (results.size()==0){
+            Toast.makeText(mContext, getString(R.string.no_results_message), Toast.LENGTH_SHORT).show();
+        }else{
+            for (int i = 0; i<results.size(); i++){
+                //MapHelper.addMarkerToTheMap(mGoogleMap, results.get(i).getLatitude(),results.get(i).getLongitud(), results.get(i).getText() );
+                mMapHelper.addItems(results.get(i).getLatitude(),results.get(i).getLongitud(), results.get(i).getText(), results.get(i).getUserName() );
+            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mMapHelper.moveCamara(mGoogleMap, results.get(0).getLatitude(), results.get(0).getLongitud());
+
+                }
+            });
+
         }
-        return null;
+
     }
+
 }

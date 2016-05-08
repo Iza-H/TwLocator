@@ -20,6 +20,7 @@ public class TweetTests extends AndroidTestCase {
     public static final double LATITUDE = 1;
     public static final double LONGITUD = 2;
     public static final long ID = 1;
+    public static final long TWITTER_ID = 1;
 
     private Tweet sut;
 
@@ -27,7 +28,7 @@ public class TweetTests extends AndroidTestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        sut = new Tweet(NAME_USER, PROFILE_IMAGE_URL, TEXT, SEARCHED_ADDRRESS, LATITUDE, LONGITUD);
+        sut = new Tweet(TWITTER_ID, NAME_USER, PROFILE_IMAGE_URL, TEXT, SEARCHED_ADDRRESS, LATITUDE, LONGITUD);
     }
 
     public void testCanCreateATweet(){

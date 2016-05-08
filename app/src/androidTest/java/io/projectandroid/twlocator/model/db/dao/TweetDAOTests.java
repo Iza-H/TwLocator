@@ -19,7 +19,7 @@ public class TweetDAOTests extends AndroidTestCase {
     public static final double LATITUDE = 1;
     public static final double LONGITUD = 2;
     public static final long ID = 1;
-
+    public static final long TWITTER_ID = 1;
     private Tweet sut;
     private long mID;
 
@@ -27,7 +27,7 @@ public class TweetDAOTests extends AndroidTestCase {
     protected void setUp() throws Exception {
         super.setUp();
         DBHelper.configure("TestDB.sqlite", getContext());
-        sut = new Tweet(NAME_USER, PROFILE_IMAGE_URL, TEXT, SEARCHED_ADDRRESS, LATITUDE, LONGITUD);
+        sut = new Tweet(TWITTER_ID, NAME_USER, PROFILE_IMAGE_URL, TEXT, SEARCHED_ADDRRESS, LATITUDE, LONGITUD);
         TweetDAO tweetDAO = new TweetDAO();
         mID = tweetDAO.insert(sut);
     }

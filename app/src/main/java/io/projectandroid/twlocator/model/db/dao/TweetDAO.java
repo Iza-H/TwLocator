@@ -41,6 +41,7 @@ public class TweetDAO extends GenericDAO<Tweet, Tweets>{
         @Override
         public ContentValues getContentValues(Tweet tweet){
             ContentValues content = new ContentValues();
+            content.put(DBConstants.KEY_TWITTER_ID, tweet.getTwitterId());
             content.put(DBConstants.KEY_TWEET_TEXT, tweet.getText());
             content.put(DBConstants.KEY_TWEET_USER_NAME, tweet.getUserName());
             content.put(DBConstants.KEY_PROFILE_IMAGE_URL, tweet.getUserProfileImage());
@@ -58,7 +59,8 @@ public class TweetDAO extends GenericDAO<Tweet, Tweets>{
         Tweet elementFromCursor(final @NonNull Cursor c) {
             assert c != null;
 
-            final long id = c.getLong(c.getColumnIndex(DBConstants.KEY_TWEET_ID));
+            final long id = c.getLong(c.getColumnIndex(DBConstants.KEY_ID));
+            final long twitter_id = c.getLong(c.getColumnIndex(DBConstants.KEY_TWITTER_ID));
             final String userName =  c.getString(c.getColumnIndex(DBConstants.KEY_TWEET_USER_NAME));
             final String text = c.getString(c.getColumnIndex(DBConstants.KEY_TWEET_USER_NAME));
             final String searchedAddrress = c.getString(c.getColumnIndex(DBConstants.KEY_SEARCHED_ADDRESS));
@@ -68,7 +70,7 @@ public class TweetDAO extends GenericDAO<Tweet, Tweets>{
             final byte[] picture = c.getBlob(c.getColumnIndex(DBConstants.KEY_PICTURE));
 
 
-            final Tweet tweet = new Tweet(userName, userProfileImage, text, searchedAddrress, latitude, longitude, picture);
+            final Tweet tweet = new Tweet(twitter_id, userName, userProfileImage, text, searchedAddrress, latitude, longitude, picture);
             tweet.setId(id);
 
 
@@ -84,7 +86,7 @@ public class TweetDAO extends GenericDAO<Tweet, Tweets>{
 
         @Override
         public String getId() {
-            return DBConstants.KEY_TWEET_ID;
+            return DBConstants.KEY_ID;
         }
 
         @Override

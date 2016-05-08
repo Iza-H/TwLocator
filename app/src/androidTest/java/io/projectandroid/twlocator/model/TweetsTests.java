@@ -19,13 +19,14 @@ public class TweetsTests extends AndroidTestCase {
     private static final String SEARCHED_ADDRRESS = "Madrid";
     private static final double LATITUDE = 1;
     private static final double LONGITUD = 2;
+    public static final long TWITTER_ID = 1;
     private static final long ID = 1;
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        Tweet t1 = new Tweet( NAME_USER, PROFILE_IMAGE_URL, TEXT, SEARCHED_ADDRRESS, LATITUDE, LONGITUD);;
-        t2 = new Tweet(NAME_USER, PROFILE_IMAGE_URL, TEXT, SEARCHED_ADDRRESS, LATITUDE, LONGITUD);;
+        Tweet t1 = new Tweet(TWITTER_ID, NAME_USER, PROFILE_IMAGE_URL, TEXT, SEARCHED_ADDRRESS, LATITUDE, LONGITUD);;
+        t2 = new Tweet(TWITTER_ID, NAME_USER, PROFILE_IMAGE_URL, TEXT, SEARCHED_ADDRRESS, LATITUDE, LONGITUD);;
         Tweet[] arrayOfTweets={t1, t2};
         List<Tweet> tweetsList= Arrays.asList(arrayOfTweets);
         mTweets= Tweets.createTweets(tweetsList);
@@ -37,7 +38,7 @@ public class TweetsTests extends AndroidTestCase {
 
     public void testAddNewTweetToTweets() throws Exception {
         int index = 3;
-        Tweet t = new Tweet(NAME_USER, PROFILE_IMAGE_URL, TEXT, SEARCHED_ADDRRESS, LATITUDE, LONGITUD);
+        Tweet t = new Tweet(TWITTER_ID, NAME_USER, PROFILE_IMAGE_URL, TEXT, SEARCHED_ADDRRESS, LATITUDE, LONGITUD);
         t.setId(index);
         mTweets.add(t);
         assertEquals(index, mTweets.getTweets().size());
